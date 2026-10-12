@@ -5,7 +5,7 @@
  */
 
 import { findStoreLazy } from "@webpack";
-import { ChannelStore, Constants, FluxDispatcher, RestAPI, Toasts, UserStore } from "@webpack/common";
+import { ChannelStore, Constants, FluxDispatcher, RestAPI, showToast, UserStore } from "@webpack/common";
 
 import { originalSessionStorage } from "./common";
 
@@ -99,18 +99,10 @@ export function voiceStateUpdatePatch(data: {
 
 export function handleClosePatch(event: any, closeCode: number, reason: string) {
     if (closeCode === 4013) {
-        Toasts.show({
-            message: "Login Failure: Invalid intent(s), Logout...",
-            id: Toasts.genId(),
-            type: Toasts.Type.FAILURE,
-        });
+        showToast("Login Failure: Invalid intent(s), Logout...", "failure");
         closeCode = 4004;
     } else if (closeCode === 4014) {
-        Toasts.show({
-            message: "Login Failure: Disallowed intent(s), Logout...",
-            id: Toasts.genId(),
-            type: Toasts.Type.FAILURE,
-        });
+        showToast("Login Failure: Disallowed intent(s), Logout...", "failure");
         closeCode = 4004;
     }
     return closeCode;
@@ -273,11 +265,7 @@ export async function doIdentifyFirstPatch(token: string, self: any, handleClose
     const botInfo = await window.BotClientNative.getBotInfo(token);
     self.console.log("[Electron > Client] Discord Bot metadata", botInfo);
     if (!botInfo.success) {
-        Toasts.show({
-            message: `Login Failure: ${botInfo.message}`,
-            id: Toasts.genId(),
-            type: Toasts.Type.FAILURE,
-        });
+        showToast(`Login Failure: ${botInfo.message}`, "failure");
         handleCloseCallback(true, 4004, botInfo.message);
         return null;
     }
@@ -290,16 +278,8 @@ export async function doIdentifyFirstPatch(token: string, self: any, handleClose
     // Reset Voice State
     latestGuildIdVoiceConnect = "0";
     self.console.log(`[Client > Electron] Bot Intents: ${intents} Shard ID: ${originalSessionStorage.getItem("currentShard")} (All: ${botInfo.allShards} )`);
-    Toasts.show({
-        message: `Bot Intents: ${intents}`,
-        id: Toasts.genId(),
-        type: Toasts.Type.SUCCESS,
-    });
-    Toasts.show({
-        message: `Shard ID: ${originalSessionStorage.getItem("currentShard")} (All: ${botInfo.allShards})`,
-        id: Toasts.genId(),
-        type: Toasts.Type.SUCCESS,
-    });
+    showToast(`Bot Intents: ${intents}`, "success");
+    showToast(`Shard ID: ${originalSessionStorage.getItem("currentShard")} (All: ${botInfo.allShards})`, "success");
     return botInfo;
 }
 
@@ -309,19 +289,11 @@ export async function openPrivateChannelPatch(e: any, this_args: any, self: any)
     const userId = l[0];
     if (!userId) {
         self.console.error("Cannot open private channel without user ID", e, l);
-        Toasts.show({
-            message: "Cannot open private channel without user ID",
-            id: Toasts.genId(),
-            type: Toasts.Type.FAILURE,
-        });
+        showToast("Cannot open private channel without user ID", "failure");
         return null;
     }
     if (UserStore.getUser(userId)?.bot) {
-        Toasts.show({
-            message: "Cannot send messages to this bot",
-            id: Toasts.genId(),
-            type: Toasts.Type.FAILURE,
-        });
+        showToast("Cannot send messages to this bot", "failure");
         return null;
     }
     const result = await this_args.openPrivateChannel_(e);
